@@ -7,6 +7,7 @@
                   [org.clojure/clojurescript "1.7.228"]
                   [org.clojure/core.async "0.2.374"]
                   [thi.ng/geom "0.0.908"]
+                  [thi.ng/morphogen "0.2.0-SNAPSHOT"]
                   [thi.ng/fabric "0.0.388"]
                   [thi.ng/validate "0.1.3"]
                   [thi.ng/domus "0.2.0"]
