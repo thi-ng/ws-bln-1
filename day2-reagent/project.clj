@@ -26,7 +26,7 @@
   :cljsbuild     {:builds [{:id           "dev"
                             :source-paths ["src"]
                             :figwheel     {:on-jsload "day2.core/on-js-reload"}
-                            :compiler     {:main                 day2.webgl
+                            :compiler     {:main                 day2.core
                                            :optimizations        :none
                                            :asset-path           "js/out"
                                            :output-to            "resources/public/js/app.js"
