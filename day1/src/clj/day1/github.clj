@@ -82,3 +82,16 @@
        (svg/svg {:width (+ 70 max-x) :height 120})
        (svg/serialize)
        (spit "commit-history.svg")))
+
+(defn count-words-in-file
+  [path ignores]
+  (->> path
+       (slurp)
+       (re-seq #"\w+")
+       (filter (complement ignores))
+       (frequencies)
+       (seq)
+       (sort-by last)
+       (reverse)))
+
+(count-words-in-file "src/clj/day1/github.clj")
