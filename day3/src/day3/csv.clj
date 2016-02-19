@@ -112,3 +112,9 @@
              :attribs {:fill "none" :stroke "#0af"}
              :layout  viz/svg-bar-plot}]})
 
+(comment
+  (->> (viz/svg-plot2d-cartesian (make-viz-spec temps :land))
+    (svg/svg {:width 600 :height 320})
+    (svg/serialize)
+    (spit "land-temps.svg"))
+  )
