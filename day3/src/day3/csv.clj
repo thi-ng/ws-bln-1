@@ -5,7 +5,10 @@
     [clojure.string :as str]
     [thi.ng.strf.core :as f]
     [thi.ng.geom.core :as g]
-    [thi.ng.geom.core.vector :refer [vec2]]))
+    [thi.ng.geom.core.vector :refer [vec2]]
+    [thi.ng.geom.viz.core :as viz]
+    [thi.ng.geom.svg.core :as svg]
+    ))
 
 (defn sanitize
   "Takes a string and replaces non-word chars with dashes."
@@ -86,3 +89,26 @@
         stats (calc-stats rows #{:year :land :land-and-ocean})]
     {:rows rows
      :stats stats}))
+
+(defn make-viz-spec
+  [{:keys [rows stats]} colid]
+  {:x-axis (viz/linear-axis
+            {:domain [(get-in stats [:year :min]) (get-in stats [:year :max])]
+             :range  [50 580]
+             :major  10
+             :minor  5
+             :pos    250
+             :label  (viz/default-svg-label int)})
+   :y-axis (viz/linear-axis
+            {:domain     [(get-in stats [colid :min]) (get-in stats [colid :max])]
+             :range      [250 20]
+             :major      0.1
+             :minor      0.05
+             :pos        50
+             :label-dist 15
+             :label-style {:text-anchor "end"}})
+   :grid   {:attribs {:stroke "#ccc"}}
+   :data   [{:values  (map (juxt :year :land) rows)
+             :attribs {:fill "none" :stroke "#0af"}
+             :layout  viz/svg-bar-plot}]})
+
