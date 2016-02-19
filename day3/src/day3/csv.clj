@@ -71,9 +71,18 @@
    :max (transduce (map id) max (- Double/MAX_VALUE) rows)
    :avg (/ (transduce (map id) + 0 rows) (count rows))})
 
+(defn calc-stats
+  [rows cols]
+  (reduce
+     (fn [acc id] (assoc acc id (column-value-range rows id)))
+     {} cols))
+
 (defn load-temperatures
   []
-  (load-data
-    (io/resource "data/global-temp-annual.csv")
-    #{"Year" "Land"}
-    #{:year :land}))
+  (let [rows (load-data
+               (io/resource "data/global-temp-annual.csv")
+               #{"Year" "Land" "Land and Ocean"}
+               #{:year :land :land-and-ocean})
+        stats (calc-stats rows #{:year :land :land-and-ocean})]
+    {:rows rows
+     :stats stats}))
