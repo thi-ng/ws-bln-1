@@ -67,9 +67,9 @@
   {:pre [(pos? (count rows)) (keyword? id)]
    ; :post [(> (:avg %) 0.1)]
    }
-  {:min (transduce (map id) min Double/MAX_VALUE temps)
-   :max (transduce (map id) max (- Double/MAX_VALUE) temps)
-   :avg (/ (transduce (map id) + 0 temps) (count temps))})
+  {:min (transduce (map id) min Double/MAX_VALUE rows)
+   :max (transduce (map id) max (- Double/MAX_VALUE) rows)
+   :avg (/ (transduce (map id) + 0 rows) (count rows))})
 
 (defn load-temperatures
   []
