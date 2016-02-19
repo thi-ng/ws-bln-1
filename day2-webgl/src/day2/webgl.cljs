@@ -14,6 +14,7 @@
    [thi.ng.geom.core.matrix :as mat :refer [M44]]
    [thi.ng.geom.aabb :as a]
    [thi.ng.geom.circle :as c]
+   [thi.ng.geom.cuboid :as cu]
    [thi.ng.geom.polygon :as poly]
    [thi.ng.geom.basicmesh :refer [basic-mesh]]
    [thi.ng.morphogen.core :as mg]
@@ -33,9 +34,62 @@
                         :s :out [{} (inject reflected-hex)])
          tree          (mg/reflect
                         :s :out [(inject seed-clone) (inject reflected-hex)])]
-     (-> (mg/seed-box (mg/sphere-lattice-seg 6 0.25 0.0955 0.2))
-         (mg/generate-mesh tree)
-         (g/transform (-> M44 (g/rotate-x (- HALF_PI)) (g/scale 0.5))))))
+     [(mg/sphere-lattice-seg 6 0.25 0.0955 0.2)
+      tree]))
+
+(defn sin [i res range amp offset]
+  (+ offset (* (m/abs (Math/sin (* (/ i res) range))) amp)))
+
+(def inner
+  (mg/subdiv :rows 2 :out [nil (mg/extrude :dir :n :len 0.1)]))
+
+(def stalk
+  (mg/extrude-prop :dir :s :len 0.1 :out [(mg/subdiv-inset :dir :y :inset 0.01 :out {4 inner})]))
+
+(defn seg
+  [len]
+  (mg/subdiv
+    :cols 15
+    :out (mapcat (fn [i] [{} (assoc-in stalk [:args :len] (sin i 16.0 m/PI len 0.05))])
+                 (range 1 17))))
+
+(def side
+  (mg/subdiv
+    :slices 15
+    :out (mapcat (fn [i] [(mg/subdiv :slices 3 :out {1 (mg/extrude-prop :dir :s :len 0.05)})
+                         (seg (sin i 16.0 m/TWO_PI 0.25 0))])
+                 (range 1 17))))
+
+(defn mg-tri
+  []
+  [(mg/circle-lattice-seg 3 0.1 0.1)
+   (mg/extrude :dir :f :len 2
+            :out [(mg/reflect :e :out [side (mg/reflect :e :out [side side])])])])
+
+(defn mg-object
+  []
+  (let [y    0.75
+        seed (cu/cuboid
+               [0 0 0] [0 0 1] [1 0 1] [1 0 0]
+               [0.25 y 0.25] [0.25 y 0.75] [0.75 y 0.75] [0.75 y 0.25])
+        tree (mg/subdiv
+               :cols 3
+               :out [(mg/reflect :n)
+                     nil
+                     (mg/reflect
+                       :s
+                       :out [nil
+                             (mg/reflect
+                               :e
+                               :out [nil (mg/reflect :e)])])])]
+    [seed tree]))
+
+(defn morphogen-mesh
+  [seed tree]
+  (-> seed
+    (mg/seed-box)
+    (mg/generate-mesh tree)
+    (g/center)))
 
 (defn ^:export cube-demo
   []
@@ -45,13 +99,15 @@
 ;                    (a/aabb [0 0 0] 0.75)
 ;                      (g/center)
 ;                      (g/as-mesh)
-                      (mg-hex-sphere)
+                      ;;(apply morphogen-mesh (mg-hex-sphere))
+                      (apply morphogen-mesh (mg-tri))
+                      ;;(apply morphogen-mesh (mg-grid))
                       (gl/as-webgl-buffer-spec {})
                       (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                       (assoc :shader (sh/make-shader-from-spec gl lambert/shader-spec))
                       (update-in [:uniforms] merge
                                  {:proj          (gl/perspective 45 view-rect 0.1 100.0)
-                                  :view          (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0))
+                                  :view          (mat/look-at (vec3 0 0 4) (vec3) (vec3 0 1 0))
                                   :lightCol      (vec3 1 0 0)
                                   ;;:lightDir      (g/normalize (vec3 -1 1 1))
                                   :ambientCol    0x000066
