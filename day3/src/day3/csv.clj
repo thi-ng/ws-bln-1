@@ -8,7 +8,9 @@
     [thi.ng.geom.core.vector :refer [vec2]]))
 
 (defn sanitize
-  [s] (str/replace s #"[^\w]" "-"))
+  "Takes a string and replaces non-word chars with dashes."
+  [s]
+  (str/lower-case (str/replace s #"[^\w]+" "-")))
 
 (defn load-csv-resource
   "Takes CSV source (path, URI or stream) and returns parsed CSV as vector of rows"
@@ -41,10 +43,28 @@
        (remove (fn [x] (empty? (second x)))) ;; remove all cols w/ empty vals
        (into {})))                           ;; turn into hash-map
 
+(defn coerce-row-fields
+  "Takes a row map and set of column ids, returns updated map with
+   column values coerced to floats."
+  [cols row]
+  (reduce
+    (fn [acc id] (update acc id f/parse-float))
+    row cols))
+
 (defn load-data
-  [path cols]
-  (let [airports  (load-csv-resource path)
-        col-idx   (build-column-index cols (first airports))
+  [path cols coerce-cols]
+  (let [rows      (load-csv-resource path)
+        col-idx   (build-column-index cols (first rows))
         keep-cols (set (keys col-idx))
-        results   (map #(transform-csv-row col-idx keep-cols %) (rest airports))]
+        xf        (comp
+                    (map #(transform-csv-row col-idx keep-cols %))
+                    (map (partial coerce-row-fields coerce-cols)))
+        results   (into [] xf (rest rows))]
     results))
+
+(defn load-temperatures
+  []
+  (load-data
+    (io/resource "data/global-temp-annual.csv")
+    #{"Year" "Land"}
+    #{:year :land}))
