@@ -62,6 +62,15 @@
         results   (into [] xf (rest rows))]
     results))
 
+(defn column-value-range
+  [rows id]
+  {:pre [(pos? (count rows)) (keyword? id)]
+   ; :post [(> (:avg %) 0.1)]
+   }
+  {:min (transduce (map id) min Double/MAX_VALUE temps)
+   :max (transduce (map id) max (- Double/MAX_VALUE) temps)
+   :avg (/ (transduce (map id) + 0 temps) (count temps))})
+
 (defn load-temperatures
   []
   (load-data
